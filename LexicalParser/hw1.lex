@@ -16,7 +16,7 @@ digit               ([0-9])
 letter              ([a-zA-Z])
 word                ([0-9a-zA-Z])
 idStart             ([_a-zA-Z])
-whitespace          ([\t\n ])
+whitespace          ([\t\n\r ])
 types               (Int|UInt|Double|Float|Bool|String|Character)
 relop               (==|!=|>=|<=|<|>)
 logop               (\|\||&&)
@@ -26,6 +26,7 @@ octInt              (0o([07]+))
 hexInt              (0x([0-9a-fA-F]+))
 decReal             ([0-9]*\.((e-[0-9]+)|(E\+[0-9]+)|[0-9]*))
 hexFp               (0x[a-zA-Z0-9]+(\+|\-)[0-9]+)
+comment             ("/*"(([^\x2F]*[\x2F][^\x2A])* | ([^\x2F])*)*"*/") | (//))
 string               ((\/\*[ \n\r\t]*\*\/)|(\/\/[ a-zA-Z]*))
 %%
 
@@ -62,9 +63,6 @@ false                        showToken("false");
 {decReal}                     showToken("DEC_REAL");
 {hexFp}                     showToken("HEX_FP");
 {string}                     showToken("STRING");
-
-
-
 {whitespace}                  ;
 .                             showToken("Dont Know");
 
