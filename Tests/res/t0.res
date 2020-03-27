@@ -1,0 +1,2 @@
+1 HEX_FP 0xFp-2
+2 HEX_FP 0x6P+3
