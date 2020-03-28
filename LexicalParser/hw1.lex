@@ -34,8 +34,8 @@ printable           ([\x09\x0A\x0D\x20-\x7E])
 printableWoNewLine  ([\x09\x20-\x7E])
 printableWoSlash    ([\x09\x0A\x0D\x20-\x2E\x30-\x7E])
 printableWoAsterisk ([\x09\x0A\x0D\x20-\x29\x2B-\x7E])
-commentTypeA        ("/*"({printableWoSlash} | [\x2F]+{printableWoAsterisk})*"*/")
-commentTypeB        ("//"{printableWoNewLine}* {newLine})
+commentTypeA        ("/*"([\x09\x0A\x0D\x20-\x2E\x30-\x7E]|[\x2F]+[\x09\x0A\x0D\x20-\x29\x2B-\x7E])*"*/")
+commentTypeB        ("//"[\x09\x20-\x7E]*[\r\n ])
 comment             ( {commentTypeA} | {commentTypeB})
 string               ((\/\*[ \n\r\t]*\*\/)|(\/\/[ a-zA-Z]*))
 %%
@@ -82,7 +82,7 @@ false                        showToken("false");
 
 void showComment(int commentType){
 int numberOfNewLines=0;
-char* curr=yytext[0];
+char* curr=yytext;
 
 while (*curr != '\0'){
     if(*curr=='\r'){
@@ -90,13 +90,13 @@ while (*curr != '\0'){
            numberOfNewLines++;
            curr+=2;
         }else{
-        numberOfnewLines++;
+        numberOfNewLines++;
         curr++;
         }
     }
 
    else if(*curr=='\n'){
-            numberOfnewLines++;
+            numberOfNewLines++;
             curr++;
     }else{
     curr++;
