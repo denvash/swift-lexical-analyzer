@@ -1,6 +1,8 @@
 %{
 #include <stdio.h>
+void showComment(int commentType);
 void showToken(char *);
+
 
 /* TODO
 Comments
@@ -16,7 +18,8 @@ digit               ([0-9])
 letter              ([a-zA-Z])
 word                ([0-9a-zA-Z])
 idStart             ([_a-zA-Z])
-whitespace          ([\t\n ])
+newLine             ([\r\n ]| (\r\n))
+whitespace          ([\t\n\r ])
 types               (Int|UInt|Double|Float|Bool|String|Character)
 relop               (==|!=|>=|<=|<|>)
 logop               (\|\||&&)
@@ -26,6 +29,13 @@ octInt              (0o([07]+))
 hexInt              (0x([0-9a-fA-F]+))
 decReal             ([0-9]*\.((e-[0-9]+)|(E\+[0-9]+)|[0-9]*))
 hexFp               (0x[a-zA-Z0-9]+(\+|\-)[0-9]+)
+printable           ([\x09\x0A\x0D\x20-\x7E])
+printableWoNewLine  ([\x09\x20-\x7E])
+printableWoSlash    ([\x09\x0A\x0D\x20-\x2E\x30-\x7E])
+printableWoAsterisk ([\x09\x0A\x0D\x20-\x29\x2B-\x7E])
+commentTypeA        ("/*"([\x09\x0A\x0D\x20-\x2E\x30-\x7E]|[\x2F]+[\x09\x0A\x0D\x20-\x29\x2B-\x7E])*"*/")
+commentTypeB        ("//"[\x09\x20-\x7E]*[\r\n ])
+comment             ( {commentTypeA} | {commentTypeB})
 string               ((\/\*[ \n\r\t]*\*\/)|(\/\/[ a-zA-Z]*))
 %%
 
@@ -61,16 +71,43 @@ false                        showToken("false");
 {hexInt}+                    showToken("HEX_INT");
 {decReal}                     showToken("DEC_REAL");
 {hexFp}                     showToken("HEX_FP");
+{commentTypeA}                     showComment(0);
+{commentTypeB}                     showComment(1);
 {string}                     showToken("STRING");
-
-
-
 {whitespace}                  ;
 .                             showToken("Dont Know");
-
 %%
 
 
-void showToken(char * token) {
-  printf("%d %s %s\n", yylineno, token, yytext);
+void showComment(int commentType){
+int numberOfNewLines=0;
+char* curr=yytext;
+
+while (*curr != '\0'){
+    if(*curr=='\r'){
+        if(*(curr+1)=='\n'){
+           numberOfNewLines++;
+           curr+=2;
+        }else{
+        numberOfNewLines++;
+        curr++;
+        }
+    }
+
+   else if(*curr=='\n'){
+            numberOfNewLines++;
+            curr++;
+    }else{
+    curr++;
+    }
+
 }
+
+printf("%d %s %d\n", yylineno, "COMMENT", numberOfNewLines+1-commentType);
+}
+
+void showToken(char * token) {
+    printf("%d %s %s\n", yylineno, token, yytext);
+}
+
+
