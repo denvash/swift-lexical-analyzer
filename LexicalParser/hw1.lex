@@ -17,6 +17,7 @@ letter              ([a-zA-Z])
 word                ([0-9a-zA-Z])
 idStart             ([_a-zA-Z])
 whitespace          ([\t\n\r ])
+newLine             ([\r\n ]| (\r\n))
 types               (Int|UInt|Double|Float|Bool|String|Character)
 relop               (==|!=|>=|<=|<|>)
 logop               (\|\||&&)
@@ -27,9 +28,12 @@ hexInt              (0x([0-9a-fA-F]+))
 decReal             ([0-9]*\.((e-[0-9]+)|(E\+[0-9]+)|[0-9]*))
 hexFp               (0x[a-zA-Z0-9]+(\+|\-)[0-9]+)
 printable           ([\x09\x0A\x0D\x20-\x7E])
+printableWoNewLine  ([\x09\x20-\x7E])
 printableWoSlash    ([\x09\x0A\x0D\x20-\x2E\x30-\x7E])
-printableWoAsterisk ([\x09\x0A\x0D\x20-\x29\x30-\x7E])
-comment             ("/*"({printableWoSlash} | [\x2F]+{printableWoAsterisk})*"*/") | (//()*[/r/n]$))
+printableWoAsterisk ([\x09\x0A\x0D\x20-\x29\x2B-\x7E])
+commentTypeA        ("/*"({printableWoSlash} | [\x2F]+{printableWoAsterisk})*"*/")
+commentTypeB        ("//"{printableWoNewLine}*{newLine})
+comment             ( {commentTypeA} | {commentTypeB})
 string               ((\/\*[ \n\r\t]*\*\/)|(\/\/[ a-zA-Z]*))
 %%
 
@@ -76,3 +80,5 @@ false                        showToken("false");
 void showToken(char * token) {
   printf("%d %s %s\n", yylineno, token, yytext);
 }
+
+
