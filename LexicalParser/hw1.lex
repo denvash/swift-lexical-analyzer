@@ -1,7 +1,6 @@
 %{
 #include <stdio.h>
 void showComment(int commentType);
-printf("%d %s %s\n", yylineno, token, yytext);
 void showToken(char *);
 
 
