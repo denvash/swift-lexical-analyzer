@@ -26,7 +26,10 @@ octInt              (0o([07]+))
 hexInt              (0x([0-9a-fA-F]+))
 decReal             ([0-9]*\.((e-[0-9]+)|(E\+[0-9]+)|[0-9]*))
 hexFp               (0x[a-zA-Z0-9]+(\+|\-)[0-9]+)
-comment             ("/*"(([^\x2F]*[\x2F][^\x2A]*)* | ([^\x2F])*)*"*/") | (//))
+printable           ([\x09\x0A\x0D\x20-\x7E])
+printableWoSlash    ([\x09\x0A\x0D\x20-\x2E\x30-\x7E])
+printableWoAsterisk ([\x09\x0A\x0D\x20-\x29\x30-\x7E])
+comment             ("/*"({printableWoSlash} | [\x2F]+{printableWoAsterisk})*"*/") | (//()*[/r/n]$))
 string               ((\/\*[ \n\r\t]*\*\/)|(\/\/[ a-zA-Z]*))
 %%
 
@@ -62,6 +65,7 @@ false                        showToken("false");
 {hexInt}+                    showToken("HEX_INT");
 {decReal}                     showToken("DEC_REAL");
 {hexFp}                     showToken("HEX_FP");
+{comment}                     showToken("COMMENT");
 {string}                     showToken("STRING");
 {whitespace}                  ;
 .                             showToken("Dont Know");
