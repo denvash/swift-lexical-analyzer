@@ -32,11 +32,13 @@ hexFp               (0x[a-zA-Z0-9]+(\+|\-)[0-9]+)
 printable           ([\x09\x0A\x0D\x20-\x7E])
 printableWoNewLine  ([\x09\x20-\x7E])
 printableWoSlash    ([\x09\x0A\x0D\x20-\x2E\x30-\x7E])
+printableWoBSlash   ([\x09\x0A\x0D\x20-\x5B\x5D-\x7E])
 printableWoAsterisk ([\x09\x0A\x0D\x20-\x29\x2B-\x7E])
 commentTypeA        ("/*"([\x09\x0A\x0D\x20-\x2E\x30-\x7E]|[\x2F]+[\x09\x0A\x0D\x20-\x29\x2B-\x7E])*"*/")
 commentTypeB        ("//"[\x09\x20-\x7E]*[\r\n ])
 comment             ( {commentTypeA} | {commentTypeB})
-string               ((\/\*[ \n\r\t]*\*\/)|(\/\/[ a-zA-Z]*))
+string              (\"([\x09\x20-\x21\x23-\x5B\x5D-\x7E]|\\[\x5C\x22nrt]|"\u{"[2-7][0-9a-fA-F]"}")*\")
+
 %%
 
 "import"                      showToken("IMPORT");
