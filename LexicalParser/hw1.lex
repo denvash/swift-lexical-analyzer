@@ -110,10 +110,56 @@ printf("%d %s %d\n", yylineno, "COMMENT", numberOfNewLines+1-commentType);
 }
 
 void showString(){
-
+char* copyString;
 char* manipulatedString;
+char* manipulatedStringIndex=manipulatedString;
+memcpy ( copyString, yytext, strlen(yytext)+1 );
+copyString++;
+char* currChar=copyString;
+char demi;
 
-memcpy ( manipulatedString, yytext, strlen(yytext)+1 );
+while(*(currChar + 1)!='\0'){
+    if(*currChar=='\\'){
+    switch(*(currChar + 1)){
+        case 'n':
+            *manipulatedStringIndex='\n';
+            manipulatedStringIndex++;
+            currChar+=2;
+            break;
+        case 'r':
+            *manipulatedStringIndex='\r';
+            manipulatedStringIndex++;
+            currChar+=2;
+            break;
+        case 't':
+            *manipulatedStringIndex='\t';
+            manipulatedStringIndex++;
+            currChar+=2;
+            break;
+        case '\\':
+            *manipulatedStringIndex='\\';
+            manipulatedStringIndex++;
+            currChar+=2;
+            break;
+        case '"':
+            *manipulatedStringIndex='"';
+            manipulatedStringIndex++;
+            currChar+=2;
+            break;
+        default:
+            manipulatedStringIndex++;
+            currChar++;
+
+    }
+    }else{
+    *manipulatedStringIndex=*currChar;
+    currChar++;
+    manipulatedStringIndex++;
+    }
+}
+*manipulatedStringIndex='\0';
+
+
 printf("%d %s %s\n", yylineno, "STRING", manipulatedString);
 
 }
