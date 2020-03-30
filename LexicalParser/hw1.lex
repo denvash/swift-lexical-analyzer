@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 void showComment(int commentType);
+void showString();
 void showToken(char *);
 
 
@@ -37,7 +38,7 @@ printableWoAsterisk ([\x09\x0A\x0D\x20-\x29\x2B-\x7E])
 commentTypeA        ("/*"([\x09\x0A\x0D\x20-\x2E\x30-\x7E]|[\x2F]+[\x09\x0A\x0D\x20-\x29\x2B-\x7E])*"*/")
 commentTypeB        ("//"[\x09\x20-\x7E]*[\r\n ])
 comment             ( {commentTypeA} | {commentTypeB})
-string              (\"([\x09\x20-\x21\x23-\x5B\x5D-\x7E]|\\[\x5C\x22nrt]|"\u{"[2-7][0-9a-fA-F]"}")*\")
+string              (\"([\x09\x20-\x21\x23-\x5B\x5D-\x7E]|\\[\x5C\x22nrt]|\\u\{[2-7][0-9a-fA-F]\})*\")
 
 %%
 
@@ -75,7 +76,7 @@ false                        showToken("false");
 {hexFp}                     showToken("HEX_FP");
 {commentTypeA}                     showComment(0);
 {commentTypeB}                     showComment(1);
-{string}                     showToken("STRING");
+{string}                     showString();
 {whitespace}                  ;
 .                             showToken("Dont Know");
 %%
@@ -106,6 +107,15 @@ while (*curr != '\0'){
 }
 
 printf("%d %s %d\n", yylineno, "COMMENT", numberOfNewLines+1-commentType);
+}
+
+void showString(){
+
+char* manipulatedString;
+
+memcpy ( manipulatedString, yytext, strlen(yytext)+1 );
+printf("%d %s %s\n", yylineno, "STRING", manipulatedString);
+
 }
 
 void showToken(char * token) {
