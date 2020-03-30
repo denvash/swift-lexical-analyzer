@@ -1,5 +1,7 @@
 %{
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 void showComment(int commentType);
 void showString();
 void showToken(char *);
@@ -111,12 +113,13 @@ printf("%d %s %d\n", yylineno, "COMMENT", numberOfNewLines+1-commentType);
 
 void showString(){
 char* copyString;
-char* manipulatedString;
+char manipulatedString[1024];
 char* manipulatedStringIndex=manipulatedString;
-memcpy ( copyString, yytext, strlen(yytext)+1 );
+strcpy ( copyString, yytext);
 copyString++;
 char* currChar=copyString;
-char demi;
+long escapeSeqNumber;
+char escapeBuffer[1024];
 
 while(*(currChar + 1)!='\0'){
     if(*currChar=='\\'){
@@ -147,8 +150,14 @@ while(*(currChar + 1)!='\0'){
             currChar+=2;
             break;
         default:
-            manipulatedStringIndex++;
+            currChar+=3;
+            escapeSeqNumber=strtol(currChar, &currChar, 16);
+            printf("strtol:%ld\n",escapeSeqNumber );
+            sprintf(escapeBuffer, "%ld", escapeSeqNumber);
+            strcat(manipulatedStringIndex,"\\u");
+            strcat(manipulatedStringIndex,escapeBuffer);
             currChar++;
+            manipulatedStringIndex+=2+strlen(escapeBuffer);
 
     }
     }else{
