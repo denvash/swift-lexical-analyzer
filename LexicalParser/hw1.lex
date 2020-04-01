@@ -3,14 +3,8 @@
 void showComment(int commentType);
 void showString();
 void showToken(char *);
-
-
-/* TODO
-Comments
-String
-Errors
-Printing
-*/
+void errorPrint();
+void errorPrintUndefinedSeq();
 %}
 
 %option yylineno
@@ -39,6 +33,7 @@ commentTypeA        ("/*"([\x09\x0A\x0D\x20-\x2E\x30-\x7E]|[\x2F]+[\x09\x0A\x0D\
 commentTypeB        ("//"[\x09\x20-\x7E]*[\r\n ])
 comment             ( {commentTypeA} | {commentTypeB})
 string              (\"([\x09\x20-\x21\x23-\x5B\x5D-\x7E]|\\[\x5C\x22nrt]|\\u\{[2-7][0-9a-fA-F]\})*\")
+undefinedEscapeSeq  (\\.)
 
 %%
 
@@ -78,9 +73,22 @@ false                        showToken("false");
 {commentTypeB}                     showComment(1);
 {string}                     showString();
 {whitespace}                  ;
-.                             showToken("Dont Know");
+{undefinedEscapeSeq}          errorPrintUndefinedSeq();
+.                             errorPrint();
 %%
 
+void errorPrint() {
+  char* curr = yytext;
+  printf("Error %s\n", curr);
+  exit(0);
+}
+
+void errorPrintUndefinedSeq() {
+  char* curr = yytext;
+
+  printf("Error undefined escape sequence %c\n", curr[1]);
+  exit(0);
+}
 
 void showComment(int commentType){
 int numberOfNewLines=0;
@@ -121,5 +129,3 @@ printf("%d %s %s\n", yylineno, "STRING", manipulatedString);
 void showToken(char * token) {
     printf("%d %s %s\n", yylineno, token, yytext);
 }
-
-
