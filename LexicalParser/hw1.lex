@@ -5,6 +5,7 @@ void showString();
 void showToken(char *);
 void errorPrint();
 void errorPrintUndefinedSeq();
+void warningPrintNestedComment();
 %}
 
 %option yylineno
@@ -76,6 +77,11 @@ false                        showToken("false");
 {undefinedEscapeSeq}          errorPrintUndefinedSeq();
 .                             errorPrint();
 %%
+
+void warningPrintNestedComment() {
+  printf("Warning nested comment\n");
+  exit(0);
+}
 
 void errorPrint() {
   char* curr = yytext;
