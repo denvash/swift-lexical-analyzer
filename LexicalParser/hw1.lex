@@ -10,6 +10,8 @@ void warningPrintNestedComment();
 
 %option yylineno
 %option noyywrap
+commentStartMultiLine ("/*")
+commentStartSingleLine ("//")
 digit               ([0-9])
 letter              ([a-zA-Z])
 word                ([0-9a-zA-Z])
@@ -30,8 +32,10 @@ printableWoNewLine  ([\x09\x20-\x7E])
 printableWoSlash    ([\x09\x0A\x0D\x20-\x2E\x30-\x7E])
 printableWoBSlash   ([\x09\x0A\x0D\x20-\x5B\x5D-\x7E])
 printableWoAsterisk ([\x09\x0A\x0D\x20-\x29\x2B-\x7E])
+printableComment    ({printableWoSlash}|[\x2F]+{printableWoAsterisk})
 commentTypeA        ("/*"([\x09\x0A\x0D\x20-\x2E\x30-\x7E]|[\x2F]+[\x09\x0A\x0D\x20-\x29\x2B-\x7E])*"*/")
 commentTypeB        ("//"[\x09\x20-\x7E]*[\r\n ])
+badNestedComment    ((\/\*)([\x09\x0A\x0D\x20-\x2E\x30-\x7E]|[\x2F]+[\x09\x0A\x0D\x20-\x29\x2B-\x7E])*(\/\*))
 comment             ( {commentTypeA} | {commentTypeB})
 string              (\"([\x09\x20-\x21\x23-\x5B\x5D-\x7E]|\\[\x5C\x22nrt]|\\u\{[2-7][0-9a-fA-F]\})*\")
 undefinedEscapeSeq  (\\.)
@@ -79,6 +83,7 @@ false                        showToken("false");
 %%
 
 void warningPrintNestedComment() {
+  // printf("debug: %s", yytext);
   printf("Warning nested comment\n");
   exit(0);
 }

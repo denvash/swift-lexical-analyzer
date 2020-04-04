@@ -1,2 +1,2 @@
-*.c
-*.out
+lex.yy.c
+a.out
