@@ -5,18 +5,15 @@
 void showComment(int commentType);
 void showString();
 void showToken(char *);
-
-
-/* TODO
-Comments
-String
-Errors
-Printing
-*/
+void errorPrint();
+void errorPrintUndefinedSeq();
+void warningPrintNestedComment();
 %}
 
 %option yylineno
 %option noyywrap
+commentStartMultiLine ("/*")
+commentStartSingleLine ("//")
 digit               ([0-9])
 letter              ([a-zA-Z])
 word                ([0-9a-zA-Z])
@@ -37,10 +34,13 @@ printableWoNewLine  ([\x09\x20-\x7E])
 printableWoSlash    ([\x09\x0A\x0D\x20-\x2E\x30-\x7E])
 printableWoBSlash   ([\x09\x0A\x0D\x20-\x5B\x5D-\x7E])
 printableWoAsterisk ([\x09\x0A\x0D\x20-\x29\x2B-\x7E])
+printableComment    ({printableWoSlash}|[\x2F]+{printableWoAsterisk})
 commentTypeA        ("/*"([\x09\x0A\x0D\x20-\x2E\x30-\x7E]|[\x2F]+[\x09\x0A\x0D\x20-\x29\x2B-\x7E])*"*/")
 commentTypeB        ("//"[\x09\x20-\x7E]*[\r\n ])
+badNestedComment    ((\/\*)([\x09\x0A\x0D\x20-\x2E\x30-\x7E]|[\x2F]+[\x09\x0A\x0D\x20-\x29\x2B-\x7E])*(\/\*))
 comment             ( {commentTypeA} | {commentTypeB})
 string              (\"([\x09\x20-\x21\x23-\x5B\x5D-\x7E]|\\[\x5C\x22nrt]|\\u\{[2-7][0-9a-fA-F]\})*\")
+undefinedEscapeSeq  (\\.)
 
 %%
 
@@ -80,9 +80,28 @@ false                        showToken("false");
 {commentTypeB}                     showComment(1);
 {string}                     showString();
 {whitespace}                  ;
-.                             showToken("Dont Know");
+{undefinedEscapeSeq}          errorPrintUndefinedSeq();
+.                             errorPrint();
 %%
 
+void warningPrintNestedComment() {
+  // printf("debug: %s", yytext);
+  printf("Warning nested comment\n");
+  exit(0);
+}
+
+void errorPrint() {
+  char* curr = yytext;
+  printf("Error %s\n", curr);
+  exit(0);
+}
+
+void errorPrintUndefinedSeq() {
+  char* curr = yytext;
+
+  printf("Error undefined escape sequence %c\n", curr[1]);
+  exit(0);
+}
 
 void showComment(int commentType){
 int numberOfNewLines=0;
@@ -176,5 +195,3 @@ printf("%d %s %s\n", yylineno, "STRING", manipulatedString);
 void showToken(char * token) {
     printf("%d %s %s\n", yylineno, token, yytext);
 }
-
-
