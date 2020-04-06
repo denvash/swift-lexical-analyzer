@@ -1,5 +1,7 @@
 %{
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 void showComment(int commentType);
 void showString();
 void showToken(char *);
@@ -52,6 +54,7 @@ undefinedEscapeSeq  (\\.)
 "return"                        showToken("RETURN");
 true                        showToken("true");
 false                        showToken("false");
+{string}                     showString();
 ";"                        showToken("SC");
 ":"                        showToken("COLON");
 ","                        showToken("COMMA");
@@ -76,9 +79,9 @@ false                        showToken("false");
 {hexFp}                     showToken("HEX_FP");
 {commentTypeA}                     showComment(0);
 {commentTypeB}                     showComment(1);
-{string}                     showString();
 {whitespace}                  ;
 {undefinedEscapeSeq}          errorPrintUndefinedSeq();
+<<EOF>>                       exit(0);
 .                             errorPrint();
 %%
 
@@ -129,10 +132,64 @@ printf("%d %s %d\n", yylineno, "COMMENT", numberOfNewLines+1-commentType);
 }
 
 void showString(){
+int countDigits=0;
+char* copyString;
+char manipulatedString[1026]={'\0'};
+int manipulatedStringIndex=0;
+int digitsIterator=0;
+long escapeSeqNumber;
+char escapeBuffer[1024];
 
-char* manipulatedString;
+   for(int i=1;i<yyleng-1;i++){
+    if(yytext[i]=='\n' || yytext[i]=='\r'){
+        printf("Error unclosed string\n");
+    	exit(0);
+    }
+    if(yytext[i]=='\\'){
+    i++;
+    switch(yytext[i]){
+                case 'n':
+                    manipulatedString[manipulatedStringIndex]='\n';
+                    break;
+                case 'r':
+                    manipulatedString[manipulatedStringIndex]='\r';
+                    break;
+                case 't':
+                    manipulatedString[manipulatedStringIndex]='\t';
+                    break;
+                case '\\':
+                    manipulatedString[manipulatedStringIndex]='\\';
+                    break;
+                case '"':
+                    manipulatedString[manipulatedStringIndex]='\"';
+                    break;
+                case 'u':// handle /u{num}
+                    for(digitsIterator=i+2; yytext[digitsIterator]!= '}';digitsIterator++){
+                        countDigits++;
+                        if (countDigits > 6){
+                            printf("Error undefined escape sequence u\n");
+                            exit(0);
+                        }
+                    }
+                    countDigits=0;
+                    char hexNum[1024]={'\0'};
+                    strncpy(hexNum,yytext+i+2,digitsIterator-i-2);
+                    escapeSeqNumber=strtol(hexNum, NULL, 16);
+                    printf("strtol:%ld\n",escapeSeqNumber );
+                    if(escapeSeqNumber>0x7E || escapeSeqNumber<0x20){
+                        printf("Error undefined escape sequence u\n");
+                        exit(0);
+                    }
+                    manipulatedString[manipulatedStringIndex]=escapeSeqNumber;
+                    i=digitsIterator;
+                    break;
+        }//end of switch
+    }else{
+        manipulatedString[manipulatedStringIndex]=yytext[i];
+    }
+    manipulatedStringIndex++;
+}
 
-memcpy ( manipulatedString, yytext, strlen(yytext)+1 );
 printf("%d %s %s\n", yylineno, "STRING", manipulatedString);
 
 }
