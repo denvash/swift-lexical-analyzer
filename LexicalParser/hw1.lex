@@ -54,6 +54,7 @@ undefinedEscapeSeq  (\\.)
 "return"                        showToken("RETURN");
 true                        showToken("true");
 false                        showToken("false");
+{string}                     showString();
 ";"                        showToken("SC");
 ":"                        showToken("COLON");
 ","                        showToken("COMMA");
@@ -78,9 +79,9 @@ false                        showToken("false");
 {hexFp}                     showToken("HEX_FP");
 {commentTypeA}                     showComment(0);
 {commentTypeB}                     showComment(1);
-{string}                     showString();
 {whitespace}                  ;
 {undefinedEscapeSeq}          errorPrintUndefinedSeq();
+<<EOF>>                       exit(0);
 .                             errorPrint();
 %%
 
@@ -140,25 +141,29 @@ long escapeSeqNumber;
 char escapeBuffer[1024];
 
    for(int i=1;i<yyleng-1;i++){
+    if(yytext[i]=='\n' || yytext[i]=='\r'){
+        printf("Error unclosed string\n");
+    	exit(0);
+    }
     if(yytext[i]=='\\'){
     i++;
     switch(yytext[i]){
                 case 'n':
-                    manipulatedString[manipulatedStringIndex]=0xA;
+                    manipulatedString[manipulatedStringIndex]='\n';
                     break;
                 case 'r':
-                    manipulatedString[manipulatedStringIndex]=0xD;
+                    manipulatedString[manipulatedStringIndex]='\r';
                     break;
                 case 't':
-                    manipulatedString[manipulatedStringIndex]=0x9;
+                    manipulatedString[manipulatedStringIndex]='\t';
                     break;
                 case '\\':
-                    manipulatedString[manipulatedStringIndex]=0x5C;
+                    manipulatedString[manipulatedStringIndex]='\\';
                     break;
                 case '"':
-                    manipulatedString[manipulatedStringIndex]=0x22;
+                    manipulatedString[manipulatedStringIndex]='\"';
                     break;
-        case 'u':// handle /u{num}
+                case 'u':// handle /u{num}
                     for(digitsIterator=i+2; yytext[digitsIterator]!= '}';digitsIterator++){
                         countDigits++;
                         if (countDigits > 6){
@@ -166,6 +171,7 @@ char escapeBuffer[1024];
                             exit(0);
                         }
                     }
+                    countDigits=0;
                     char hexNum[1024]={'\0'};
                     strncpy(hexNum,yytext+i+2,digitsIterator-i-2);
                     escapeSeqNumber=strtol(hexNum, NULL, 16);
@@ -174,7 +180,7 @@ char escapeBuffer[1024];
                         printf("Error undefined escape sequence u\n");
                         exit(0);
                     }
-                    manipulatedString[manipulatedStringIndex]=hexNum;
+                    manipulatedString[manipulatedStringIndex]=escapeSeqNumber;
                     i=digitsIterator;
                     break;
         }//end of switch
