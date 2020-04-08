@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 void showString();
 void showToken(char *);
 void showCommentToken();
@@ -78,6 +79,9 @@ Int|UInt|Double|Float|Bool|String|Character                           showToken(
 .                                                                     printf("Error %s\n", yytext);exit(0);
 %%
 
+bool isPrinitible (char curr) {
+  return !((0x20 <= curr && curr <= 0x7E) || curr == 0x09 || curr == 0x0A || curr == 0x0D);
+}
 
 void showToken(char * token) {
   printf("%d %s %s\n", yylineno, token, yytext);
@@ -94,25 +98,26 @@ void showCommentToken(){
   int count = 1;
   if (yytext[1] == '*') {
     for(int i=2; i < strlen(yytext)-2; i++) {
-      if (yytext[i]==0xA){
+      char curr = yytext[i];
+      char next = yytext[i+1];
+      if (curr==0xA) count++;
+      if (curr==0xD) {
         count++;
+        if (curr==0xA) i++;
       }
-      if (yytext[i]==0xD) {
-        count++;
-        if (yytext[i]==0xA) {
-          i++;
-        }
+      if (isPrinitible(curr)) {
+        printf("Error %c\n", curr);
+        exit(0);
       }
-      if (yytext[i]=='/' && yytext[i+1]=='*') {
+      if (yytext[i]=='/' && next=='*') {
         printf("Warning nested comment\n");
         exit(0);
       }
     }
   } else { // Single line comment
       for(int i=2; i < strlen(yytext)-2; i++) {
-        int curr = yytext[i];
-        if (!((0x7E <= curr && curr <= 0x20) || (curr == 0x09 || curr == 0x0A || curr == 0x0D) )) {
-          printf("Error %d\n", yytext[i]);
+        if (isPrinitible(yytext[i])) {
+          printf("Error %c\n", yytext[i]);
           exit(0);
         }
       }
