@@ -9,4 +9,4 @@
 3 COLON :
 3 TYPE String
 3 ASSIGN =
-Error unclosed string
+Error undefined escape sequence u
