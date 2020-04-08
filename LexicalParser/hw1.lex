@@ -2,12 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-void showComment(int commentType);
 void showString();
 void showToken(char *);
-void errorPrintUndefinedSeq();
 void showCommentToken();
 void showIntToken(char *,int);
+void printSeqError();
 %}
 
 %option yylineno
@@ -71,6 +70,7 @@ Int|UInt|Double|Float|Bool|String|Character                           showToken(
 (\/\*([^*]|{newline}|(\*+([^*\/]|{newline})))*\*+\/)|(\/\/.*)         showCommentToken();
 {string}                                                              showString();
 [\t\n\r ]+                                                            ;
+\".*\\.+\"                                                            printSeqError();
 \\.                                                                   printf("Error undefined escape sequence %c\n", yytext[1]);exit(0);;
 \"                                                                    printf("Error unclosed string\n");exit(0);
 \/\*                                                                  printf("Error unclosed comment\n");exit(0);
@@ -92,23 +92,30 @@ void showIntToken(char * name,int base){
 
 void showCommentToken(){
   int count = 1;
-  if (yytext[1]=='*'){
-    for(int i=2;i<strlen(yytext)-2;i++){
+  if (yytext[1] == '*') {
+    for(int i=2; i < strlen(yytext)-2; i++) {
       if (yytext[i]==0xA){
-              count++;
-          }
-          if( yytext[i]==0xD){
-              count++;
-              if (yytext[i]==0xA){
-                  i++;
-              }
+        count++;
       }
-      if ( yytext[i]=='/' && yytext[i+1]=='*' ){
+      if (yytext[i]==0xD) {
+        count++;
+        if (yytext[i]==0xA) {
+          i++;
+        }
+      }
+      if (yytext[i]=='/' && yytext[i+1]=='*') {
         printf("Warning nested comment\n");
         exit(0);
-
       }
     }
+  } else { // Single line comment
+      for(int i=2; i < strlen(yytext)-2; i++) {
+        int curr = yytext[i];
+        if (!((0x7E <= curr && curr <= 0x20) || (curr == 0x09 || curr == 0x0A || curr == 0x0D) )) {
+          printf("Error %d\n", yytext[i]);
+          exit(0);
+        }
+      }
   }
   printf("%d COMMENT %d\n",yylineno , count);
 }
@@ -181,4 +188,46 @@ void showString(){
 }
 
 printf("%d STRING %s\n", yylineno, manipulatedString);
+}
+
+
+void printSeqError(){
+    int j=0;
+        for(int i=0 ; i<yyleng-1;i++){
+            if(yytext[i]=='\\'){
+                i++;
+                switch(yytext[i]){
+                    case 'n':
+                        break;
+                    case 'r':
+                        break;
+                    case 't':
+                        break;
+                    case '\\':
+                        break;
+                    case '"':
+                        break;
+                    case 'u':
+                        for(j=i+2;yytext[j]!='}';j++){
+                            if (yytext[j] < '0' ||( yytext[j]>'9'&& yytext[j]<'A' )|| (yytext[j]>'F'&&yytext[j] <'a')||(yytext[j]>'f') ){
+                                printf("Error undefined escape sequence u\n");
+                                exit(0);
+                            }
+                        }
+                        char hex_num[1024]={'\0'};
+                        strncpy(hex_num,yytext+i+2,j-i-2);
+                        int num = strtol(hex_num,NULL,16);
+                        if(num>0x7E || num<0x20){
+                             printf("Error undefined escape sequence u\n");
+                            exit(0);
+                        }
+                        i=j;
+                      	break;
+
+                    default :
+                    printf("Error undefined escape sequence %c\n",yytext[i]);
+                    exit(0);
+                }
+        }
+    }
 }
