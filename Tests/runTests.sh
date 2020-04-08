@@ -29,7 +29,7 @@ for filePath in ${inFolder}/*.in; do
     fileName=`basename ${filePath} | cut -d . -f 1`
 
 # echo ${filePath}
-    echo Runing Test ${fileName}
+    echo -e "Running ${fileName}"
     ${app} < ${filePath} > ${outFolder}/${fileName}${outExt}
 done
 
@@ -42,7 +42,8 @@ for filePath in ${outFolder}/*.out; do
 
     result=`diff ${filePath} ${resultFolder}/${fileName}${outExt}`
     if [[ "${result}" != "" ]]; then
-        echo ${result}
-        echo "~~ Test ${fileName} FAILED"
+        echo -e "\e[35m${result}"
+        echo -e "\e[91mTest ${fileName} FAILED"
+        exit 1
     fi
 done
