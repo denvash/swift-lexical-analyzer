@@ -4,6 +4,7 @@ workspace=$(pwd)
 parserFolder=${workspace}/LexicalParser
 
 lex ${parserFolder}/hw1.lex
+# lex ${parserFolder}/parserX.lex
 gcc -ll ${workspace}/lex.yy.c
 
 app=./a.out
