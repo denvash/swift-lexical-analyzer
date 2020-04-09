@@ -71,7 +71,6 @@ Int|UInt|Double|Float|Bool|String|Character                           showToken(
 (\/\*([^*]|{newline}|(\*+([^*\/]|{newline})))*\*+\/)|(\/\/.*)         showCommentToken();
 {string}                                                              showString();
 [\t\n\r ]+                                                            ;
-\".*\"                                                                printSeqError();
 \\.                                                                   printf("Error undefined escape sequence %c\n", yytext[1]);exit(0);;
 \"                                                                    printf("Error unclosed string\n");exit(0);
 \/\*                                                                  printf("Error unclosed comment\n");exit(0);
@@ -215,7 +214,7 @@ void printSeqError(){
           strncpy(hex_num,yytext+i+2,j-i-2);
           int num = strtol(hex_num,NULL,16);
           if(num>0x7E || num<0x20){
-                printf("Error undefined escape sequence u\n");
+              printf("Error undefined escape sequence u\n");
               exit(0);
           }
           i=j;
@@ -223,8 +222,6 @@ void printSeqError(){
 
         default: printf("Error undefined escape sequence %c\n",yytext[i]); exit(0);
      }
-   } else {
-    //  if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
-   }
+    }
   }
 }
