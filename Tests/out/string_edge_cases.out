@@ -70,15 +70,6 @@
 12 COLON :
 12 TYPE String
 12 ASSIGN =
-13 LET let
-13 ID x
-13 COLON :
-13 TYPE String
-13 ASSIGN =
-13 STRING You should not reach this string
-14 LET let
-14 ID x
-14 COLON :
-14 TYPE String
-14 ASSIGN =
-Error undefined escape sequence e
+12 STRING This is a string
+12 ID AndThisIsATokenFollowedByAnUnclosedString
+Error unclosed string
