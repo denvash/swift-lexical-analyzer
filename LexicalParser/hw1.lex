@@ -8,6 +8,7 @@ void showToken(char *);
 void showCommentToken();
 void showIntToken(char *,int);
 void printSeqError();
+void printStringWillegalChar();
 %}
 
 %option yylineno
@@ -72,6 +73,7 @@ Int|UInt|Double|Float|Bool|String|Character                           showToken(
 (\/\*([^*]|{newline}|(\*+([^*\/]|{newline})))*\*+\/)|(\/\/.*)         showCommentToken();
 {string}                                                              showString();
 \".*\\.+\"                                                            printSeqError();
+\".*\"                                                                printStringWillegalChar();
 [\t\n\r ]+                                                            ;
 \"                                                                    printf("Error unclosed string\n");exit(0);
 \/\*                                                                  printf("Error unclosed comment\n");exit(0);
@@ -211,5 +213,12 @@ void printSeqError(){
         default: printf("Error undefined escape sequence %c\n",yytext[i]); exit(0);
       }
     }
+  }
+}
+
+void printStringWillegalChar(){
+ int j=0;
+  for(int i=0 ; i < yyleng-1; i++){
+    if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
   }
 }
