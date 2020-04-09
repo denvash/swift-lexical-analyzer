@@ -28,8 +28,8 @@ printableWoAsterisk ([\x09\x0A\x0D\x20-\x29\x2B-\x7E])
 printableWou ([\x20-\x74\x76-\x7E])
 printableComment    ({printableWoSlash}|[\x2F]+{printableWoAsterisk})
 badNestedComment    ((\/\*)([\x09\x0A\x0D\x20-\x2E\x30-\x7E]|[\x2F]+[\x09\x0A\x0D\x20-\x29\x2B-\x7E])*(\/\*))
-escapeSeq           ((\\\")|(\\\\)|\\n|\\r|\\t)
-string              (\"([\x09\x20-\x21\x23-\x5B\x5D-\x7E]|{escapeSeq}|\\u\{[\x20-\x7E]*\})*\")
+escapeSeq           ((\\\")|(\\\\)|(\\n)|(\\r)|(\\t))
+string              (\"(([\x09]|[\x20-\x21]|[\x23-\x5B]|[\x5D-\x7E])|{escapeSeq}|\\u\{([0-9]|[a-fA-F])+\})*\")
 CRLF                (\r\n)
 CR                  (\r)
 LF                  (\n)
@@ -71,9 +71,8 @@ Int|UInt|Double|Float|Bool|String|Character                           showToken(
 0x{word}+(\+|\-){digit}+                                              showToken("HEX_FP");
 (\/\*([^*]|{newline}|(\*+([^*\/]|{newline})))*\*+\/)|(\/\/.*)         showCommentToken();
 {string}                                                              showString();
-\".*\\.+\"                                                                printSeqError();
+\".*\\.+\"                                                            printSeqError();
 [\t\n\r ]+                                                            ;
-\\.                                                                   printf("Error undefined escape sequence %c\n", yytext[1]);exit(0);;
 \"                                                                    printf("Error unclosed string\n");exit(0);
 \/\*                                                                  printf("Error unclosed comment\n");exit(0);
 <<EOF>>                                                               exit(0);
@@ -211,8 +210,6 @@ void printSeqError(){
 
         default: printf("Error undefined escape sequence %c\n",yytext[i]); exit(0);
       }
-    } else {
-      if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
     }
   }
 }
