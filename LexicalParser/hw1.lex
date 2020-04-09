@@ -70,6 +70,7 @@ Int|UInt|Double|Float|Bool|String|Character                           showToken(
 0x{word}+(\+|\-){digit}+                                              showToken("HEX_FP");
 (\/\*([^*]|{newline}|(\*+([^*\/]|{newline})))*\*+\/)|(\/\/.*)         showCommentToken();
 {string}                                                              showString();
+\".*\"                                                                printSeqError();
 [\t\n\r ]+                                                            ;
 \\.                                                                   printf("Error undefined escape sequence %c\n", yytext[1]);exit(0);;
 \"                                                                    printf("Error unclosed string\n");exit(0);
@@ -134,14 +135,8 @@ void showString(){
   char escapeBuffer[1024];
 
   for(int i=1;i<yyleng-1;i++){
-    if(yytext[i]=='\n' || yytext[i]=='\r'){
-      printf("Error unclosed string\n");
-      exit(0);
-    }
-    if (!isPrintable(yytext[i])) {
-      printf("Error %c\n", yytext[i]);
-      exit(0);
-    }
+    if(yytext[i]=='\n' || yytext[i]=='\r'){ printf("Error unclosed string\n"); exit(0); }
+    if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
     if (yytext[i]=='\\') {
       i++;
       switch(yytext[i]) {
@@ -191,7 +186,7 @@ printf("%d STRING %s\n", yylineno, manipulatedString);
 
 void printSeqError(){
   int j=0;
-  for(int i=0 ; i<yyleng-1;i++) {
+  for(int i=0 ; i < yyleng-1; i++) {
     if(yytext[i]=='\\') {
       i++;
       switch(yytext[i]) {
@@ -213,7 +208,7 @@ void printSeqError(){
           char hex_num[1024]={'\0'};
           strncpy(hex_num,yytext+i+2,j-i-2);
           int num = strtol(hex_num,NULL,16);
-          if(num>0x7E || num<0x20){
+          if(num > 0x7E || num < 0x20){
               printf("Error undefined escape sequence u\n");
               exit(0);
           }
@@ -221,7 +216,9 @@ void printSeqError(){
           break;
 
         default: printf("Error undefined escape sequence %c\n",yytext[i]); exit(0);
-     }
+      }
+    } else {
+      if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
     }
   }
 }
