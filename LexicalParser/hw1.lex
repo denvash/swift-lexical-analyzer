@@ -28,7 +28,8 @@ printableWoAsterisk ([\x09\x0A\x0D\x20-\x29\x2B-\x7E])
 printableWou ([\x20-\x74\x76-\x7E])
 printableComment    ({printableWoSlash}|[\x2F]+{printableWoAsterisk})
 badNestedComment    ((\/\*)([\x09\x0A\x0D\x20-\x2E\x30-\x7E]|[\x2F]+[\x09\x0A\x0D\x20-\x29\x2B-\x7E])*(\/\*))
-string              (\"([\x09\x20-\x21\x23-\x5B\x5D-\x7E]|\\[\x20-\x7E]|\\u\{[\x20-\x7E]*\})*\")
+escapeSeq           ((\\\")|(\\\\)|\\n|\\r|\\t)
+string              (\"([\x09\x20-\x21\x23-\x5B\x5D-\x7E]|{escapeSeq}|\\u\{[\x20-\x7E]*\})*\")
 CRLF                (\r\n)
 CR                  (\r)
 LF                  (\n)
@@ -70,7 +71,7 @@ Int|UInt|Double|Float|Bool|String|Character                           showToken(
 0x{word}+(\+|\-){digit}+                                              showToken("HEX_FP");
 (\/\*([^*]|{newline}|(\*+([^*\/]|{newline})))*\*+\/)|(\/\/.*)         showCommentToken();
 {string}                                                              showString();
-\".*\"                                                                printSeqError();
+\".*\\.+\"                                                                printSeqError();
 [\t\n\r ]+                                                            ;
 \\.                                                                   printf("Error undefined escape sequence %c\n", yytext[1]);exit(0);;
 \"                                                                    printf("Error unclosed string\n");exit(0);
@@ -135,8 +136,8 @@ void showString(){
   char escapeBuffer[1024];
 
   for(int i=1;i<yyleng-1;i++){
-    if(yytext[i]=='\n' || yytext[i]=='\r'){ printf("Error unclosed string\n"); exit(0); }
-    if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
+    //if(yytext[i]=='\n' || yytext[i]=='\r'){ printf("Error unclosed string\n"); exit(0); }
+    //if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
     if (yytext[i]=='\\') {
       i++;
       switch(yytext[i]) {
@@ -146,17 +147,8 @@ void showString(){
         case '\\': manipulatedString[manipulatedStringIndex]='\\'; break;
         case '"': manipulatedString[manipulatedStringIndex]='\"'; break;
         case 'u':// handle /u{num}
-          if(yytext[i+1]!='{'){
-            printf("Error undefined escape sequence u\n");
-            exit(0);
-           }
-          }
           for (digitsIterator=i+2; yytext[digitsIterator] != '}'; digitsIterator++) {
-            if (yytext[digitsIterator] < '0' || ( yytext[digitsIterator] > '9' && yytext[digitsIterator] < 'A') ||
-              (yytext[digitsIterator] > 'F' && yytext[digitsIterator] <'a')||(yytext[digitsIterator] > 'f') ){
-              printf("Error undefined escape sequence u\n");
-              exit(0);
-            }
+
 
             countDigits++;
             if (countDigits > 6){
@@ -175,9 +167,6 @@ void showString(){
             manipulatedString[manipulatedStringIndex]=escapeSeqNumber;
             i=digitsIterator;
             break;
-            default: // all other illegal escape letters
-              printf("Error undefined escape sequence %c\n",yytext[i]);
-              exit(0);
       } //end of switch
     } else {
       manipulatedString[manipulatedStringIndex]=yytext[i];
