@@ -71,7 +71,7 @@ Int|UInt|Double|Float|Bool|String|Character                           showToken(
 (\/\*([^*]|{newline}|(\*+([^*\/]|{newline})))*\*+\/)|(\/\/.*)         showCommentToken();
 {string}                                                              showString();
 [\t\n\r ]+                                                            ;
-\".*\\.+\"                                                            printSeqError();
+\".*\"                                                                printSeqError();
 \\.                                                                   printf("Error undefined escape sequence %c\n", yytext[1]);exit(0);;
 \"                                                                    printf("Error unclosed string\n");exit(0);
 \/\*                                                                  printf("Error unclosed comment\n");exit(0);
@@ -79,8 +79,8 @@ Int|UInt|Double|Float|Bool|String|Character                           showToken(
 .                                                                     printf("Error %s\n", yytext);exit(0);
 %%
 
-bool isPrinitible (char curr) {
-  return !((0x20 <= curr && curr <= 0x7E) || curr == 0x09 || curr == 0x0A || curr == 0x0D);
+bool isPrintable (char curr) {
+  return ((0x20 <= curr && curr <= 0x7E) || curr == 0x09 || curr == 0x0A || curr == 0x0D);
 }
 
 void showToken(char * token) {
@@ -105,7 +105,7 @@ void showCommentToken(){
         count++;
         if (curr==0xA) i++;
       }
-      if (isPrinitible(curr)) {
+      if (!isPrintable(curr)) {
         printf("Error %c\n", curr);
         exit(0);
       }
@@ -116,7 +116,7 @@ void showCommentToken(){
     }
   } else { // Single line comment
       for(int i=2; i < strlen(yytext)-2; i++) {
-        if (isPrinitible(yytext[i])) {
+        if (!isPrintable(yytext[i])) {
           printf("Error %c\n", yytext[i]);
           exit(0);
         }
@@ -135,60 +135,54 @@ void showString(){
   char escapeBuffer[1024];
 
   for(int i=1;i<yyleng-1;i++){
-  if(yytext[i]=='\n' || yytext[i]=='\r'){
+    if(yytext[i]=='\n' || yytext[i]=='\r'){
       printf("Error unclosed string\n");
-    exit(0);
-  }
-  if(yytext[i]=='\\'){
-  i++;
-  switch(yytext[i]){
-              case 'n':
-                  manipulatedString[manipulatedStringIndex]='\n';
-                  break;
-              case 'r':
-                  manipulatedString[manipulatedStringIndex]='\r';
-                  break;
-              case 't':
-                  manipulatedString[manipulatedStringIndex]='\t';
-                  break;
-              case '\\':
-                  manipulatedString[manipulatedStringIndex]='\\';
-                  break;
-              case '"':
-                  manipulatedString[manipulatedStringIndex]='\"';
-                  break;
-              case 'u':// handle /u{num}
-                  for(digitsIterator=i+2; yytext[digitsIterator]!= '}';digitsIterator++){
-                    if (yytext[digitsIterator] < '0' ||( yytext[digitsIterator]>'9'&& yytext[digitsIterator]<'A' )||
-                     (yytext[digitsIterator]>'F'&&yytext[digitsIterator] <'a')||(yytext[digitsIterator]>'f') ){
-                      printf("Error undefined escape sequence u\n");
-                      exit(0);
-                    }
+      exit(0);
+    }
+    if (!isPrintable(yytext[i])) {
+      printf("Error %c\n", yytext[i]);
+      exit(0);
+    }
+    if (yytext[i]=='\\') {
+      i++;
+      switch(yytext[i]) {
+        case 'n': manipulatedString[manipulatedStringIndex]='\n'; break;
+        case 'r': manipulatedString[manipulatedStringIndex]='\r'; break;
+        case 't': manipulatedString[manipulatedStringIndex]='\t'; break;
+        case '\\': manipulatedString[manipulatedStringIndex]='\\'; break;
+        case '"': manipulatedString[manipulatedStringIndex]='\"'; break;
+        case 'u':// handle /u{num}
+          for (digitsIterator=i+2; yytext[digitsIterator] != '}'; digitsIterator++) {
+            if (yytext[digitsIterator] < '0' || ( yytext[digitsIterator] > '9' && yytext[digitsIterator] < 'A') ||
+              (yytext[digitsIterator] > 'F' && yytext[digitsIterator] <'a')||(yytext[digitsIterator] > 'f') ){
+              printf("Error undefined escape sequence u\n");
+              exit(0);
+            }
 
-                      countDigits++;
-                      if (countDigits > 6){
-                          printf("Error undefined escape sequence u\n");
-                          exit(0);
-                      }
-                  }
-                  countDigits=0;
-                  char hexNum[1024]={'\0'};
-                  strncpy(hexNum,yytext+i+2,digitsIterator-i-2);
-                  escapeSeqNumber=strtol(hexNum, NULL, 16);
-                  if(escapeSeqNumber>0x7E || escapeSeqNumber<0x20){
-                      printf("Error undefined escape sequence u\n");
-                      exit(0);
-                  }
-                  manipulatedString[manipulatedStringIndex]=escapeSeqNumber;
-                  i=digitsIterator;
-                  break;
-              default:// all other illegal escape letters
-                    printf("Error undefined escape sequence %c\n",yytext[i]);
-                    exit(0);
-      }//end of switch
-  }else{
+            countDigits++;
+            if (countDigits > 6){
+                printf("Error undefined escape sequence u\n");
+                exit(0);
+            }
+          }
+            countDigits=0;
+            char hexNum[1024]={'\0'};
+            strncpy(hexNum,yytext+i+2,digitsIterator-i-2);
+            escapeSeqNumber=strtol(hexNum, NULL, 16);
+            if(escapeSeqNumber>0x7E || escapeSeqNumber<0x20){
+              printf("Error undefined escape sequence u\n");
+              exit(0);
+            }
+            manipulatedString[manipulatedStringIndex]=escapeSeqNumber;
+            i=digitsIterator;
+            break;
+            default: // all other illegal escape letters
+              printf("Error undefined escape sequence %c\n",yytext[i]);
+              exit(0);
+      } //end of switch
+    } else {
       manipulatedString[manipulatedStringIndex]=yytext[i];
-  }
+    }
   manipulatedStringIndex++;
 }
 
@@ -197,42 +191,40 @@ printf("%d STRING %s\n", yylineno, manipulatedString);
 
 
 void printSeqError(){
-    int j=0;
-        for(int i=0 ; i<yyleng-1;i++){
-            if(yytext[i]=='\\'){
-                i++;
-                switch(yytext[i]){
-                    case 'n':
-                        break;
-                    case 'r':
-                        break;
-                    case 't':
-                        break;
-                    case '\\':
-                        break;
-                    case '"':
-                        break;
-                    case 'u':
-                        for(j=i+2;yytext[j]!='}';j++){
-                            if (yytext[j] < '0' ||( yytext[j]>'9'&& yytext[j]<'A' )|| (yytext[j]>'F'&&yytext[j] <'a')||(yytext[j]>'f') ){
-                                printf("Error undefined escape sequence u\n");
-                                exit(0);
-                            }
-                        }
-                        char hex_num[1024]={'\0'};
-                        strncpy(hex_num,yytext+i+2,j-i-2);
-                        int num = strtol(hex_num,NULL,16);
-                        if(num>0x7E || num<0x20){
-                             printf("Error undefined escape sequence u\n");
-                            exit(0);
-                        }
-                        i=j;
-                      	break;
+  int j=0;
+  for(int i=0 ; i<yyleng-1;i++) {
+    if(yytext[i]=='\\') {
+      i++;
+      switch(yytext[i]) {
+        case 'n': break;
+        case 'r': break;
+        case 't': break;
+        case '\\': break;
+        case '"': break;
+        case 'u':
+          for(j=i+2;yytext[j]!='}';j++){
+            if (yytext[j] < '0' ||
+                (yytext[j]>'9'&& yytext[j]<'A') ||
+                (yytext[j]>'F' && yytext[j] <'a')||
+                (yytext[j] > 'f') ){
+              printf("Error undefined escape sequence u\n");
+              exit(0);
+            }
+          }
+          char hex_num[1024]={'\0'};
+          strncpy(hex_num,yytext+i+2,j-i-2);
+          int num = strtol(hex_num,NULL,16);
+          if(num>0x7E || num<0x20){
+                printf("Error undefined escape sequence u\n");
+              exit(0);
+          }
+          i=j;
+          break;
 
-                    default :
-                    printf("Error undefined escape sequence %c\n",yytext[i]);
-                    exit(0);
-                }
-        }
-    }
+        default: printf("Error undefined escape sequence %c\n",yytext[i]); exit(0);
+     }
+   } else {
+    //  if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
+   }
+  }
 }
