@@ -72,8 +72,8 @@ Int|UInt|Double|Float|Bool|String|Character                           showToken(
 0x{word}+(\+|\-){digit}+                                              showToken("HEX_FP");
 (\/\*([^*]|{newline}|(\*+([^*\/]|{newline})))*\*+\/)|(\/\/.*)         showCommentToken();
 {string}                                                              showString();
-\".*\\.+\"                                                            printSeqError();
-\".*\"                                                                printStringWillegalChar();
+\"(([\x20-\x21]|[\x23-\x5B]|[\x5D-\x7E])*\\.+([\x20-\x21]|[\x23-\x5B]|[\x5D-\x7E])*)*\"                                                            printSeqError();
+\"[^\x22]*\"                                                                printStringWillegalChar();
 [\t\n\r ]+                                                            ;
 \"                                                                    printf("Error unclosed string\n");exit(0);
 \/\*                                                                  printf("Error unclosed comment\n");exit(0);
@@ -180,6 +180,7 @@ printf("%d STRING %s\n", yylineno, manipulatedString);
 
 
 void printSeqError(){
+//printf("%d printSeqError %s\n", yylineno, yytext);
   int j=0;
   for(int i=0 ; i < yyleng-1; i++) {
     if(yytext[i]=='\\') {
@@ -217,8 +218,10 @@ void printSeqError(){
 }
 
 void printStringWillegalChar(){
+//printf("%d printStringWillegalChar %s\n", yylineno, yytext);
  int j=0;
   for(int i=0 ; i < yyleng-1; i++){
+	if (yytext[i]==0x0A||yytext[i]==0x0D) { printf("Error unclosed string\n"); exit(0); }
     if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
   }
 }
