@@ -135,7 +135,7 @@ void showString(){
   char escapeBuffer[1024];
 
   for(int i=1;i<yyleng-1;i++){
-    //if(yytext[i]=='\n' || yytext[i]=='\r'){ printf("Error unclosed string\n"); exit(0); }
+    if(yytext[i]=='\n' || yytext[i]=='\r'){ printf("Error unclosed string\n"); exit(0); }
     //if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
     if (yytext[i]=='\\') {
       i++;
