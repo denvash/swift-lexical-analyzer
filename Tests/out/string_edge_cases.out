@@ -72,4 +72,4 @@
 12 ASSIGN =
 12 STRING This is a string
 12 ID AndThisIsATokenFollowedByAnUnclosedString
-hereError unclosed string
+Error unclosed string

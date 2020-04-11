@@ -211,7 +211,7 @@ void printSeqError() {
 
 void printStringWillegalChar(){
   for(int i=0 ; i < yyleng-1; i++){
-    if (yytext[i]=='\n' || yytext[i]=='\r') { printf("Error unclosed string\n"); exit(0); }
+    if (yytext[i]==0x0A || yytext[i]==0x0D) { printf("Error unclosed string\n"); exit(0); }
       if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
     }
 }
