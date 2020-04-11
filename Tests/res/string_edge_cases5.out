@@ -1,0 +1,7 @@
+1 LET let
+1 ID x
+1 COLON :
+1 TYPE String
+1 COMMENT 1
+1 ASSIGN =
+Error unclosed string

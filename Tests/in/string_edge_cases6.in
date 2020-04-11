@@ -1,0 +1,1 @@
+let x : String /* this one should cause error UD esc seq */ = "\ "

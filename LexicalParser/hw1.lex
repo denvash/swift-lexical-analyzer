@@ -13,10 +13,13 @@ void printStringWillegalChar();
 
 %option yylineno
 %option noyywrap
+CRLF                (\r\n)
+CR                  (\r)
+LF                  (\n)
+newline             ([{CR}{LF}{CRLF}])
 digit               ([0-9])
 letter              ([a-zA-Z])
 word                ([0-9a-zA-Z])
-newLine             ([\r\n ]| (\r\n))
 binInt              (0b([01]+))
 exp                 ([eE][-+]{digit}+)
 fp                  ([pP][-+]{digit}+)
@@ -26,15 +29,11 @@ printableWoNewLine  ([\x09\x20-\x7E])
 printableWoSlash    ([\x09\x0A\x0D\x20-\x2E\x30-\x7E])
 printableWoBSlash   ([\x09\x0A\x0D\x20-\x5B\x5D-\x7E])
 printableWoAsterisk ([\x09\x0A\x0D\x20-\x29\x2B-\x7E])
-printableWou ([\x20-\x74\x76-\x7E])
+printableWou        ([\x20-\x74\x76-\x7E])
 printableComment    ({printableWoSlash}|[\x2F]+{printableWoAsterisk})
 badNestedComment    ((\/\*)([\x09\x0A\x0D\x20-\x2E\x30-\x7E]|[\x2F]+[\x09\x0A\x0D\x20-\x29\x2B-\x7E])*(\/\*))
 escapeSeq           ((\\\")|(\\\\)|(\\n)|(\\r)|(\\t))
 string              (\"(([\x09]|[\x20-\x21]|[\x23-\x5B]|[\x5D-\x7E])|{escapeSeq}|\\u\{([0-9]|[a-fA-F])+\})*\")
-CRLF                (\r\n)
-CR                  (\r)
-LF                  (\n)
-newline             ([{CR}{LF}{CRLF}])
 %%
 
 import                                                                showToken("IMPORT");
@@ -72,8 +71,8 @@ Int|UInt|Double|Float|Bool|String|Character                           showToken(
 0x{word}+(\+|\-){digit}+                                              showToken("HEX_FP");
 (\/\*([^*]|{newline}|(\*+([^*\/]|{newline})))*\*+\/)|(\/\/.*)         showCommentToken();
 {string}                                                              showString();
-\"(([\x20-\x21]|[\x23-\x5B]|[\x5D-\x7E])*\\.+([\x20-\x21]|[\x23-\x5B]|[\x5D-\x7E])*)*\"                                                            printSeqError();
-\"[^\x22]*\"                                                                printStringWillegalChar();
+\"(([\x20-\x21]|[\x23-\x5B]|[\x5D-\x7E])*\\.+([\x20-\x21]|[\x23-\x5B]|[\x5D-\x7E])*)*\"  printSeqError();
+\"[^\x22]*\"                                                          printStringWillegalChar();
 [\t\n\r ]+                                                            ;
 \"                                                                    printf("Error unclosed string\n");exit(0);
 \/\*                                                                  printf("Error unclosed comment\n");exit(0);
@@ -82,12 +81,10 @@ Int|UInt|Double|Float|Bool|String|Character                           showToken(
 %%
 
 bool isPrintable (char curr) {
-  return ((0x20 <= curr && curr <= 0x7E) || curr == 0x09 || curr == 0x0A || curr == 0x0D);
+  return (0x20 <= curr && curr <= 0x7E) || curr == 0x09 || curr == 0x0A || curr == 0x0D;
 }
 
-void showToken(char * token) {
-  printf("%d %s %s\n", yylineno, token, yytext);
-}
+void showToken(char * token) { printf("%d %s %s\n", yylineno, token, yytext); }
 
 void showIntToken(char * name,int base){
   char *buff=yytext;
@@ -111,15 +108,16 @@ void showCommentToken(){
         printf("Error %c\n", curr);
         exit(0);
       }
-      if (yytext[i]=='/' && next=='*') {
+      if (curr=='/' && next=='*') {
         printf("Warning nested comment\n");
         exit(0);
       }
     }
   } else { // Single line comment
       for(int i=2; i < strlen(yytext)-2; i++) {
-        if (!isPrintable(yytext[i])) {
-          printf("Error %c\n", yytext[i]);
+        char curr = yytext[i];
+        if (!isPrintable(curr)) {
+          printf("Error %c\n", curr);
           exit(0);
         }
       }
@@ -179,38 +177,33 @@ printf("%d STRING %s\n", yylineno, manipulatedString);
 }
 
 
-void printSeqError(){
-//printf("%d printSeqError %s\n", yylineno, yytext);
+void printSeqError() {
   int j=0;
-  for(int i=0 ; i < yyleng-1; i++) {
-    if(yytext[i]=='\\') {
+  for (int i=0 ; i < yyleng-1; i++) {
+    if (yytext[i]=='\\') {
       i++;
-      switch(yytext[i]) {
+      switch (yytext[i]) {
         case 'n': break;
         case 'r': break;
         case 't': break;
         case '\\': break;
         case '"': break;
         case 'u':
-          for(j=i+2;yytext[j]!='}';j++){
+          for (j=i+2; yytext[j]!='}'; j++) {
             if (yytext[j] < '0' ||
-                (yytext[j]>'9'&& yytext[j]<'A') ||
-                (yytext[j]>'F' && yytext[j] <'a')||
-                (yytext[j] > 'f') ){
+                (yytext[j] > '9' && yytext[j] < 'A') ||
+                (yytext[j] > 'F' && yytext[j] <'a')||
+                (yytext[j] > 'f') ) {
               printf("Error undefined escape sequence u\n");
               exit(0);
             }
           }
           char hex_num[1024]={'\0'};
-          strncpy(hex_num,yytext+i+2,j-i-2);
-          int num = strtol(hex_num,NULL,16);
-          if(num > 0x7E || num < 0x20){
-              printf("Error undefined escape sequence u\n");
-              exit(0);
-          }
+          strncpy (hex_num, yytext+i+2 ,j-i-2);
+          int num = strtol(hex_num, NULL, 16);
+          if (num > 0x7E || num < 0x20){ printf("Error undefined escape sequence u\n"); exit(0); }
           i=j;
           break;
-
         default: printf("Error undefined escape sequence %c\n",yytext[i]); exit(0);
       }
     }
@@ -218,10 +211,8 @@ void printSeqError(){
 }
 
 void printStringWillegalChar(){
-//printf("%d printStringWillegalChar %s\n", yylineno, yytext);
- int j=0;
   for(int i=0 ; i < yyleng-1; i++){
-	if (yytext[i]==0x0A||yytext[i]==0x0D) { printf("Error unclosed string\n"); exit(0); }
-    if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
-  }
+    if (yytext[i]==0x0A||yytext[i]==0x0D) { printf("Error unclosed string\n"); exit(0); }
+      if (!isPrintable(yytext[i])) { printf("Error %c\n", yytext[i]); exit(0); }
+    }
 }
