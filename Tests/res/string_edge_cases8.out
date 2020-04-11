@@ -4,4 +4,4 @@
 1 TYPE String
 1 COMMENT 1
 1 ASSIGN =
-Error unclosed string
+Error undefined escape sequence u
