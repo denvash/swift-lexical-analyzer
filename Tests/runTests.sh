@@ -1,10 +1,9 @@
 #!/bin/bash
 
 workspace=$(pwd)
-parserFolder=${workspace}/LexicalParser
+parserFolder=${workspace}
 
-lex ${parserFolder}/hw1.lex
-# lex ${parserFolder}/parserX.lex
+lex ${parserFolder}/swift-lexical-analyzer.lex
 gcc -ll ${workspace}/lex.yy.c
 
 app=./a.out
